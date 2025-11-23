@@ -77,7 +77,7 @@ func (ch *contentHandler) GetContentWithQuery(c *fiber.Ctx) error {
 		search = c.Query("search")
 	}
 
-	categoryID := 0
+	categoryID := int64(0)
 
 	if c.Query("categoryID") != "" {
 		categoryID, err = conv.StringToInt64(c.Query("categoryID"))
@@ -334,9 +334,22 @@ func (ch *contentHandler) GetContents(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
 	}
 
+	// categoryID := int64(0)
+
+	if c.Query("categoryID") != "" {
+		_, err = conv.StringToInt64(c.Query("categoryID"))
+		if err != nil {
+			code = "[HANDLER] GetContents - 4"
+			log.Errorw(code, err)
+			errorResp.Meta.Status = false
+			errorResp.Meta.Message = err.Error()
+			return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+		}
+	}
+
 	results, err := ch.contentService.GetContents(c.Context(), entity.QueryString{})
 	if err != nil {
-		code = "[HANDLER] GetContents - 2"
+		code = "[HANDLER] GetContents - 5"
 		log.Errorw(code, err)
 
 		errorResp.Meta.Status = false
