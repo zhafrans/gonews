@@ -27,21 +27,31 @@ type contentRepository struct {
 func (c *contentRepository) GetContents(ctx context.Context, query entity.QueryString) ([]entity.ContentEntity, error) {
 	var modelContents []model.Content
 
-	order := fmt.Sprintf("%s %s", query.OrderBy, query.OrderType)
-	offset := (query.Page - 1) * query.Limit
+	
 	status := ""
-
+	
 	sqlMain := c.db.Preload(clause.Associations).
-			Where("title ilike ? OR excerpt ilike ? OR description ilike ?", "%"+query.Search+"%", "%"+query.Search+"%", "%"+query.Search+"%").
-			Where("status LIKE ?", "%"+status+"%")
+	Where("title ilike ? OR excerpt ilike ? OR description ilike ?", "%"+query.Search+"%", "%"+query.Search+"%", "%"+query.Search+"%").
+	Where("status LIKE ?", "%"+status+"%")
 
-	if query.CategoryID > 0 {
-		sqlMain = sqlMain.Where("category_id = ?", query.CategoryID)
+	if query.OrderBy == "" {
+	query.OrderBy = "created_at"
+	}
+	if query.OrderType == "" {
+		query.OrderType = "DESC"
+	}
+	if query.Limit <= 0 {
+		query.Limit = 10
+	}
+	if query.Page <= 0 {
+		query.Page = 1
 	}
 
 	if query.Status != "" {
-		status = query.Status
+		sqlMain = sqlMain.Where("status = ?", query.Status)
 	}
+	order := fmt.Sprintf("%s %s", query.OrderBy, query.OrderType)
+	offset := (query.Page - 1) * query.Limit
 
 	err := sqlMain.
 			Order(order).
